@@ -58,24 +58,25 @@ rule all:
 #            shell("quast {FASTADIR}/{input}.fasta -g {ANNOTDIR}/{todaystr}/{input}/{input}.gff")
 
 
-# Automated anotation with Prokka
+# Automated anotation with Prokka using a custom fasta databse of all caudovirales proteins and all identical viral proteins from NCBI
 
 rule prokka:
     output: expand("{annotdir}/{today}/{phage}/{phage}.ptt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     priority: 50
     run:
+        #make sure we have the correct java version
         shell("sudo update-java-alternatives --jre-headless --jre --set java-1.11.0-openjdk-amd64")
         for file in FASTAREADS:
             input = file
             shell("echo Begginning annotation for {input} with prokka...")
             shell("prokka --quiet --kingdom Viruses --genus Caudovirales --addmrna --cdsrnaolap --usegenus --protein {CAUDOVIRALES_PROTEIN} --gcode 11 --prefix {input} --locustag {input} --addgenes --rfam --outdir {ANNOTDIR}/{todaystr}/{input} {FASTADIR}/{input}.fasta --force")
-            #Quickly generate .ptt file for transtermHP using gbk2ptt
+            #Quickly generate .ptt file that is used for mapping by transtermHP using gbk2ptt
             shell('perl /home/jared/gbk2ptt/GBKtoPTT.pl < {ANNOTDIR}/{todaystr}/{input}/{input}.gbk > {ANNOTDIR}/{todaystr}/{input}/{input}.ptt')
             shell('echo Complete!')
         else:
             shell ("echo Annotation complete for all fasta files in {FASTADIR}!")
 
-#run hmmsearch against pVOG group
+#run hmmsearch against pVOG group http://dmk-brain.ecn.uiowa.edu/pVOGs/
 
 rule pvog_search:
     input: PROKKA
@@ -94,7 +95,7 @@ rule pvog_search:
             shell ("echo Annotation complete for all fasta files in {FASTADIR}!")
 
 
-#Predict cds with Genemark, Vgas, and PHANOTATE
+#Predict cds with Genemark, Vgas, and PHANOTATE. This is just extra right now.
 
 rule cds_predict:
     input: PVOG
@@ -123,7 +124,7 @@ rule cds_predict:
             shell('echo Completed Searching')
 
 
-# Promoter prediction with bTSSfinder.
+# Promoter prediction with bTSSfinder. Uses a small python script to first get intergenic regions based on the gbk file produced by prokka.
 
 rule btss_find:
     input: PROKKA
@@ -173,6 +174,7 @@ rule tRNAscan:
             shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA')
             shell('tRNAscan-SE -B -Q -D -X 17 -f {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA/{input}_secondary.txt -m {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA/{input}_stats.txt {ANNOTDIR}/{todaystr}/{input}/{input}.fna -o {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA/{input}_tRNA.txt')
             shell('aragorn -c -d -gc11 -w -o {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA/{input}_aragorn.fasta {ANNOTDIR}/{todaystr}/{input}/{input}.fna')
+            #merge files with prokka gff file. NOT USED. Prokka does tRNA for us.
             #shell('{BIOCODE_GFF}/convert_tRNAScanSE_to_gff3.pl -i {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA/{input}_tRNA.txt > {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA/{input}_tRNA.gff3')
             #shell('{BIOCODE_GFF}/merge_predicted_gff3.py ')
             shell('echo Complete!')
@@ -195,6 +197,7 @@ rule viral_pro:
             shell('mv *.scores.csv {ANNOTDIR}/{todaystr}/{input}/{input}_viralPRO')
         else:
             shell ("echo Completed VIRALpro!")
+
 
 #Signal peptide prediction with SignalP5.0
 
@@ -221,6 +224,7 @@ rule interpro_scan:
     output: expand("{annotdir}/{today}/{phage}/{phage}_interpro/{phage}.faa.gff",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     priority: 30
     run:
+        #need to change java versions for this to run
         shell ("sudo update-java-alternatives --jre-headless --jre --set java-1.8.0-openjdk-amd64")
         for file in FASTAREADS:
             input = file
@@ -230,11 +234,12 @@ rule interpro_scan:
             shell("mv {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff")
             shell('echo Complete!')
         else:
+            #change back to default java
             shell("sudo update-java-alternatives --jre-headless --jre --set java-1.11.0-openjdk-amd64")
             shell ("echo Completed Protein Preiction!")
 
 
-#BLAST protein files produce by prokka against NCBI Protein Blast remote database
+#BLAST protein files produce by prokka against NCBI Protein Blast remote database. Has not been able to succesfully run on my laptop yet.
 
 rule blastreads:
     input: PROKKA
@@ -246,11 +251,14 @@ rule blastreads:
             shell('echo Begginning remote BLASTP for protein file produced for {input} against refseq_protein database. This may take a few hours...')
             shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_blastp')
             shell("blastp -db refseq_protein -query {ANNOTDIR}/{todaystr}/{input}/{input}.faa -out {ANNOTDIR}/{todaystr}/{input}/{input}_blastp/{input}_blast.tbl -entrez_query 'Viruses'[Organism] -outfmt 6 -remote")
+            #convert blast output into a gff file using MG-kit.
             shell("{MGKIT_BIN}/blast2gff blastdb -s '\t' -i 0 -r -n -db refseq_protein {ANNOTDIR}/{todaystr}/{input}/{input}_blastp/{input}_blast.tbl | {MGKIT_BIN}/filter-gff sequence -t -a identity | {MGKIT_BIN}/filter-gff sequence -t -a bitscore -f max > {ANNOTDIR}/{todaystr}/{input}/{input}_blastp/{input}_blast.gff")
             shell("echo Blastp completed for {input}.faa!")
         else:
             shell ("echo Completed Protein Blast!")
 
+
+#Clean up all the resulting gff files and create one master gff file.
 
 rule gff_clean:
     input: PROKKA, PVOG, CDSPRED, BTSSFIND, TTHP, TRNASCAN, SIGNALP, INTERPROSCAN
@@ -269,18 +277,18 @@ rule gff_clean:
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{b[$1]=$4;c[$1]=$5; next}}{{$4=b[$1]; $5=c[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.2.gff")
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.2.gff {ANNOTDIR}/{todaystr}/{input}/{input}.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff")
 
-            #set sequence location for interproscan
+            #set sequence location for interproscan gff file to match the CDS locations.
             shell("sed -i 's,\({input}\)\(.*ID=\)\(.*\)\(_mRNA.*\),\\3\\2\\3\\4,g' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf")
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$1]=$4;b[$1]=$5; next}}{{$4=a[$1]; $5=b[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff")
 
-            #clean up interpro scan file
+            #clean up interpro scan file. Remove features we don't need, change format on some features.
             shell("sed -n -i '/##FASTA/q;p' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff")
             shell("sed -i 's/{input}_[[:digit:]]\+[[:blank:]]\+/{input}\t/; s/##sequence-region.*//; s/ID=match$.*;signature/signature/; s/Target={input}_[[:digit:]]\+[[:blank:]]\+[[:digit:]]\+[[:blank:]]\+[[:digit:]]\+//; s/;status=T//; s/date\x3d[[:digit:]]\+\x2d[[:digit:]]\+\x2d[[:digit:]]\+\x3b//g' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff")
             shell("sed -i '/{input}\t\x2e\tpolypeptide/d' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff")
             shell("tr -s '\n' < {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3")
             shell("sed -i 's,\({input}\t\)\([[:alpha:]]\+\)\(\t.*\),\\1\\2\\3;inference=Predicted by \\2,g' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3")
 
-            #add attributes to prokka CDS
+            #add attributes to prokka CDS. We split all the categories from interproscan into seperate files to make sure we add each result to the right CDS, even if multiple programs reported a feature at the location.
             shell("sed -i 's/protein_match/CDS/g' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3")
             shell("grep 'Phobius' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3")
             shell("grep 'TMHMM' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3")
@@ -295,14 +303,14 @@ rule gff_clean:
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propat.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propat.edit.gff")
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_prodom.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propat.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.interpro.edit.gff")
 
-            #clean up signalp files
+            #clean up signalp files so they have the correct start position, etc.
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$1]=$4;b[$1]=$5; next}}{{$4=a[$1]; $5=b[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.edit.gff3")
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{$9=\x22;product=\x22$3\x22;source=SignalP5.0\x22; $3=\x22CDS\x22; print}}'  {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.edit.gff3 >  {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.edit.2.gff3")
             shell("sed 's/{input}_[0-9]\{{5\}}\t/{input}\t/g' {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.edit.2.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.final.gff3 ")
             #add annotations from signaP to prokka gff working file
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.final.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.interpro.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.gff")
 
-            #clean up bTSSfinder files to match desired gff3 format
+            #clean up bTSSfinder files to match desired gff3 format. Need to set the sequence start points to match the full genome and not just the intergenic regions.
             shell("cp {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.gff {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
             shell("sed -i 's/tss\t/Promoter\t/; s/promoter=/note=/g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
             shell("sed -i 's,\(sigma70\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)$,\\1 promoter \\2 \\3 \\4 \\5 predicted by bTSSfinder v1.206,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
