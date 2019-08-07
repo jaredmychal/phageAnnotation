@@ -311,10 +311,10 @@ rule gff_clean:
             #clean up bTSSfinder files to match desired gff3 format and ensure the correct sequence locations are used and not the integenic region locations
             shell("grep '##sequence-region' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.gff | sed 's,\([[:digit:]]\+\)\x2d\([[:digit:]]\+\),\\1 \\2,g' > {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_intergene.edit.gff")
             shell("cp {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.gff {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
-            shell("sed -i 's/tss\t/Promoter\t/; s/\([[:digit:]]\+\)\x2d\([[:digit:]]\+\)/\\1 \\2/; s/promoter=/note=/g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
+            shell("sed -i 's/tss\t/Promoter\t/; s/\([[:digit:]]\+\)\x2d\([[:digit:]]\+\)/\t\\1\t\\2\t/; s/promoter=/note=/g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
             shell("sed -i 's,\(sigma70\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)$,\\1 promoter \\2 \\3 \\4 \\5 predicted by bTSSfinder v1.206,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
             shell("sed -i 's,\(.*btssfinder\tPromoter\t\)[[:digit:]]\+\t[[:digit:]]\+\t\(.*\t\)\(note=sigma70 promoter box[[:digit:]]\+pos=\)\([[:digit:]]\+\)\(.*box[[:digit:]]\+pos=\)\([[:digit:]]\+\)\(.*\)$,\\1\\4\t\\6\t\\2\\3\\4\\5\\6\\7,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
-            shell("awk -v FS='\t' -v OFS='\t' '{{$8=$8+$3; $9=$9+$3}} {{print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
+            shell("awk -F'\t' -v OFS='\t' '{{$7=$7+$2; $8=$8+$2}} {{print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
             shell("sed -i 's,\(box[[:digit:]]\+[[:alpha:]]\+\)=\([[:digit:]]\+\),\\1:\\2,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
             shell("sed -i 's/.*btssfinder\sPromoter/{input}\tbtssfinder\tPromoter'/g {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
             shell("sed -i '1,8d' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
