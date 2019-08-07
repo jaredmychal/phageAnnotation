@@ -1,0 +1,344 @@
+import os
+import glob
+import time, datetime
+
+# Get the date to create directories based on date the snakefile was run
+today = datetime.date.today()
+todaystr = today.isoformat()
+
+# Globals
+configfile: 'config_prokka.yaml'
+
+# Path to working directories as determined in config_prokka
+GBKDIR = config['genbank']
+FASTADIR = config['fasta_samples']
+ANNOTDIR = config['prokka_annotated']
+TMHMM_MODEL = config['tmhmm_model']
+PROKKA_HMM_DB = config['hmmdb']
+INTERPRO_BIN = config['interproscan']
+GENEMARK_BIN = config['genemark']
+VGAS_BIN = config['vgas']
+GLIMMER_BIN = config['glimmer3']
+BTSSFIND_BIN = config['btssfinder']
+BIOCODE_GFF = config['biocode_gff']
+GFFREAD_BIN = config['gffread']
+MGKIT_BIN = config['mgkit']
+VIRUS_PROTEIN = config['virus_protein']
+CAUDOVIRALES_PROTEIN = config['caudovirales_protein']
+
+# Names of bacteriophages based on files in target directory ending with .fasta
+FASTAREADS = [os.path.splitext(os.path.basename(f))[0] for f in os.listdir(FASTADIR) if f.endswith('.fasta')]
+
+# Names of output target files for each rule
+PROKKA = expand("{annotdir}/{today}/{phage}/{phage}.ptt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+PVOG = expand("{annotdir}/{today}/{phage}/{phage}_hmmsearch/{phage}_hmm",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+CDSPRED = expand("{annotdir}/{today}/{phage}/{phage}_vgas/{phage}_vgas",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+BTSSFIND = expand("{annotdir}/{today}/{phage}/{phage}_btss/",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+TTHP = expand("{annotdir}/{today}/{phage}/{phage}_tthp/{phage}_tthp.tt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+TRNASCAN = expand("{annotdir}/{today}/{phage}/{phage}_tRNA/{phage}_tRNA.txt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+SIGNALP = expand("{annotdir}/{today}/{phage}/{phage}_signalp/{phage}_signalp.gff3", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+VIRALPRO = expand("{annotdir}/{today}/{phage}/{phage}_viralPRO/{phage}.scores.csv", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+INTERPROSCAN = expand("{annotdir}/{today}/{phage}/{phage}_interpro/{phage}.faa.gff",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+BLAST = expand("{annotdir}/{today}/{phage}/{phage}_blastp/{phage}_blast.bsl", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+GFFCLEAN = expand("{annotdir}/{today}/{phage}/{phage}_gff/{phage}.master.gff3",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+
+#initating rule to call for each additional rule to be run
+rule all:
+    input: GFFCLEAN
+
+
+# Check quality of assembled reads with Quast
+#Currently not used as only have fasta files.
+
+#rule quast:
+#    output: directory(expand("/home/jared/quast_results/results*/"))
+#    run:
+#        for file in FASTAREADS:
+#            input = file
+#            shell("quast {FASTADIR}/{input}.fasta -g {ANNOTDIR}/{todaystr}/{input}/{input}.gff")
+
+
+# Automated anotation with Prokka
+
+rule prokka:
+    output: expand("{annotdir}/{today}/{phage}/{phage}.ptt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    priority: 50
+    run:
+        shell("sudo update-java-alternatives --jre-headless --jre --set java-1.11.0-openjdk-amd64")
+        for file in FASTAREADS:
+            input = file
+            shell("echo Begginning annotation for {input} with prokka...")
+            shell("prokka --quiet --kingdom Viruses --genus Caudovirales --addmrna --cdsrnaolap --usegenus --protein {CAUDOVIRALES_PROTEIN} --gcode 11 --prefix {input} --locustag {input} --addgenes --rfam --outdir {ANNOTDIR}/{todaystr}/{input} {FASTADIR}/{input}.fasta --force")
+            #Quickly generate .ptt file for transtermHP using gbk2ptt
+            shell('perl /home/jared/gbk2ptt/GBKtoPTT.pl < {ANNOTDIR}/{todaystr}/{input}/{input}.gbk > {ANNOTDIR}/{todaystr}/{input}/{input}.ptt')
+            shell('echo Complete!')
+        else:
+            shell ("echo Annotation complete for all fasta files in {FASTADIR}!")
+
+#run hmmsearch against pVOG group
+
+rule pvog_search:
+    input: PROKKA
+    output: expand("{annotdir}/{today}/{phage}/{phage}_hmmsearch/{phage}_hmm",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    priority: 49
+    run:
+        for file in FASTAREADS:
+            input = file
+            shell("echo Begginning hmmsearch for {input} with pVOG...")
+            shell("hmmsearch --domtblout {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment.tbl -A {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment.align -o {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_hmm {PROKKA_HMM_DB} {ANNOTDIR}/{todaystr}/{input}/{input}.faa")
+            shell("{MGKIT_BIN}/hmmer2gff -c -no-frame -db pVOG -f CDS {ANNOTDIR}/{todaystr}/{input}/{input}.faa {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment.tbl -o {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment.gff")
+            shell("sort -s -k 1,1 -k 7,7 {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment_sort.gff")
+            shell("{MGKIT_BIN}/filter-gff sequence -t -a bitscore -f max {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment_sort.gff {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_filter.gff")
+            shell('echo Complete!')
+        else:
+            shell ("echo Annotation complete for all fasta files in {FASTADIR}!")
+
+
+#Predict cds with Genemark, Vgas, and PHANOTATE
+
+rule cds_predict:
+    input: PVOG
+    output: expand("{annotdir}/{today}/{phage}/{phage}_vgas/{phage}_vgas",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    priority: 48
+    run:
+        for file in FASTAREADS:
+            input = file
+            shell('echo Searching for predicted CDS for {input}...')
+            shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}')
+            shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_gms')
+            shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_vgas')
+            #use genemark first
+            shell('perl {GENEMARK_BIN}/gmsn.pl --name {input}_gms --prok --clean {FASTADIR}/{input}.fasta')
+            shell('mv gms.log {ANNOTDIR}/{todaystr}/{input}/{input}_gms')
+            shell('mv {input}.fasta.lst {ANNOTDIR}/{todaystr}/{input}/{input}_gms')
+            shell('mv {input}_gms_hmm* {ANNOTDIR}/{todaystr}/{input}/{input}_gms')
+            shell('{GENEMARK_BIN}/gmhmmp -a -d -r -f G -m {ANNOTDIR}/{todaystr}/{input}/{input}_gms/{input}_gms_hmm_combined.mod {FASTADIR}/{input}.fasta -o {ANNOTDIR}/{todaystr}/{input}/{input}_gms/{input}_gms_gff.txt')
+            #use vgas
+            shell('{VGAS_BIN}/vgas {FASTADIR}/{input}.fasta {input}_vgas -n -p')
+            #remove first four lines of protein vgas file as they are not needed
+            shell("sed -i '1,4d' protein_{input}_vgas")
+            shell('mv *{input}* {ANNOTDIR}/{todaystr}/{input}/{input}_vgas')
+            #run Glimmer prediction?
+        else:
+            shell('echo Completed Searching')
+
+
+# Promoter prediction with bTSSfinder.
+
+rule btss_find:
+    input: PROKKA
+    output: directory(expand("{annotdir}/{today}/{phage}/{phage}_btss/",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS))
+    priority: 46
+    run:
+        for file in FASTAREADS:
+            input = file
+            shell('echo Searching for predicted E. coli Sigma70 promoters in {input}...')
+            #get intergenic regions for promoter search
+            shell('./get_intergene.py {ANNOTDIR}/{todaystr}/{input}/{input}.gbk')
+            shell('mv {input}_ign.fasta {ANNOTDIR}/{todaystr}/{input}')
+            shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_btss')
+            shell('bTSSfinder -i {ANNOTDIR}/{todaystr}/{input}/{input}_ign.fasta -o {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss -c 70 -h 2 -t e')
+            shell('echo Complete!')
+        else:
+            shell('echo Completed Searching')
+
+
+# Search for rho-dependent terminators with TranstermHP
+
+rule transterm:
+    input: PROKKA
+    output: expand("{annotdir}/{today}/{phage}/{phage}_tthp/{phage}_tthp.tt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    priority: 45
+    run:
+        for file in FASTAREADS:
+            input = file
+            shell('echo Searching for predicted Rho-Independent Terminators in {input}...')
+            shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_tthp')
+            shell('transterm -p /home/jared/anaconda3/envs/PhagePipe/data/expterm.dat {FASTADIR}/{input}.fasta {ANNOTDIR}/{todaystr}/{input}/{input}.ptt --bag-output {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.bag > {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.tt')
+            shell('echo Complete!')
+        else:
+            shell('echo Completed Transterm-HP Searching')
+
+
+#Search for tRNA with tRNAscan-SE
+
+rule tRNAscan:
+    input: PROKKA
+    output: expand("{annotdir}/{today}/{phage}/{phage}_tRNA/{phage}_tRNA.txt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    priority: 40
+    run:
+        for file in FASTAREADS:
+            input = file
+            shell('echo Searching for tRNA in {input} with Aragorn and tRNAscan...')
+            shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA')
+            shell('tRNAscan-SE -B -Q -D -X 17 -f {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA/{input}_secondary.txt -m {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA/{input}_stats.txt {ANNOTDIR}/{todaystr}/{input}/{input}.fna -o {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA/{input}_tRNA.txt')
+            shell('aragorn -c -d -gc11 -w -o {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA/{input}_aragorn.fasta {ANNOTDIR}/{todaystr}/{input}/{input}.fna')
+            #shell('{BIOCODE_GFF}/convert_tRNAScanSE_to_gff3.pl -i {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA/{input}_tRNA.txt > {ANNOTDIR}/{todaystr}/{input}/{input}_tRNA/{input}_tRNA.gff3')
+            #shell('{BIOCODE_GFF}/merge_predicted_gff3.py ')
+            shell('echo Complete!')
+        else:
+            shell ("echo Completed tRNAscan-SE!")
+
+
+#Use ViralPro to predict viral capsid and tail proteins
+#Currently is very resource heavy, and has not been tested.
+
+rule viral_pro:
+    input: PROKKA
+    output: expand("{annotdir}/{today}/{phage}/{phage}_viralPRO/{phage}.scores.csv", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    run:
+        for file in FASTAREADS:
+            input = file
+            shell('echo Begginning VIRALpro to predict capsid and tail proteins in {input}...')
+            shell('/home/jared/VIRALpro_1.0/runVIRALpro.sh {ANNOTDIR}/{todaystr}/{input}/{input}.faa ss')
+            shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_viralPRO')
+            shell('mv *.scores.csv {ANNOTDIR}/{todaystr}/{input}/{input}_viralPRO')
+        else:
+            shell ("echo Completed VIRALpro!")
+
+#Signal peptide prediction with SignalP5.0
+
+rule signalp:
+    input: PROKKA
+    output: expand("{annotdir}/{today}/{phage}/{phage}_signalp/{phage}_signalp.gff3", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    priority: 35
+    run:
+        for file in FASTAREADS:
+            input = file
+            shell('echo Begginning signal peptide prediction with SignalP 5.0 for {input}.')
+            shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_signalp')
+            shell("signalp -fasta {ANNOTDIR}/{todaystr}/{input}/{input}.faa -prefix {input}_signalp -org gram- -format short -gff3")
+            shell("mv {input}_signalp* {ANNOTDIR}/{todaystr}/{input}/{input}_signalp")
+            shell('echo Complete!')
+        else:
+            shell("echo Completed Protein Prediction!")
+1
+
+# run INTERPROSCAN to run pfam, TIGRFAM, Phobius, and TMHMM in one step.
+
+rule interpro_scan:
+    input: PROKKA
+    output: expand("{annotdir}/{today}/{phage}/{phage}_interpro/{phage}.faa.gff",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    priority: 30
+    run:
+        shell ("sudo update-java-alternatives --jre-headless --jre --set java-1.8.0-openjdk-amd64")
+        for file in FASTAREADS:
+            input = file
+            shell('echo Begginning protein prediction with InterproScan for {input}.')
+            shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_interpro')
+            shell("{INTERPRO_BIN}/interproscan.sh -i {ANNOTDIR}/{todaystr}/{input}/{input}.faa --appl tmhmm,phobius,pfam,ProSiteProfiles,ProSitePatterns,ProDom --iprlookup --goterms --pathways -cpu 1 -d {ANNOTDIR}/{todaystr}/{input}/{input}_interpro")
+            shell("mv {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff")
+            shell('echo Complete!')
+        else:
+            shell("sudo update-java-alternatives --jre-headless --jre --set java-1.11.0-openjdk-amd64")
+            shell ("echo Completed Protein Preiction!")
+
+
+#BLAST protein files produce by prokka against NCBI Protein Blast remote database
+
+rule blastreads:
+    input: PROKKA
+    output: expand("{annotdir}/{today}/{phage}/{phage}_blastp/{phage}_blast.bsl", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    priority: 30
+    run:
+        for file in FASTAREADS:
+            input = file
+            shell('echo Begginning remote BLASTP for protein file produced for {input} against refseq_protein database. This may take a few hours...')
+            shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_blastp')
+            shell("blastp -db refseq_protein -query {ANNOTDIR}/{todaystr}/{input}/{input}.faa -out {ANNOTDIR}/{todaystr}/{input}/{input}_blastp/{input}_blast.tbl -entrez_query 'Viruses'[Organism] -outfmt 6 -remote")
+            shell("{MGKIT_BIN}/blast2gff blastdb -s '\t' -i 0 -r -n -db refseq_protein {ANNOTDIR}/{todaystr}/{input}/{input}_blastp/{input}_blast.tbl | {MGKIT_BIN}/filter-gff sequence -t -a identity | {MGKIT_BIN}/filter-gff sequence -t -a bitscore -f max > {ANNOTDIR}/{todaystr}/{input}/{input}_blastp/{input}_blast.gff")
+            shell("echo Blastp completed for {input}.faa!")
+        else:
+            shell ("echo Completed Protein Blast!")
+
+
+rule gff_clean:
+    input: PROKKA, PVOG, CDSPRED, BTSSFIND, TTHP, TRNASCAN, SIGNALP, INTERPROSCAN
+    output: expand("{annotdir}/{today}/{phage}/{phage}_gff/{phage}.master.gff3",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    priority: 29
+    run:
+        shell('echo Begginning clean up of .gff3 files for merging.')
+        for file in FASTAREADS:
+            input = file
+            shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_gff')
+            #generate file to provide sequence location mapping of CDS in all following steps
+            shell("{GFFREAD_BIN} {ANNOTDIR}/{todaystr}/{input}/{input}.gff -g {ANNOTDIR}/{todaystr}/{input}/{input}.faa --tlf > {ANNOTDIR}/{todaystr}/{input}/{input}.tlf")
+            #add start codons to prokka gff files
+            shell("awk '/]$/{{printf $0\x22\t\x22; getline; print substr ($0,0,3)}}' {ANNOTDIR}/{todaystr}/{input}/{input}.ffn > {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.gff")
+            shell("sed -i 's,>\({input}_[[:digit:]]\+\)\([[:blank:]]\+.*\t\)\([[:alpha:]]\+\)$,\\1\t\\2CDS\tC4\tC5\tC6\tC7\tC8\t;start_codon=\\3,g' {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.gff")
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{b[$1]=$4;c[$1]=$5; next}}{{$4=b[$1]; $5=c[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.2.gff")
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.2.gff {ANNOTDIR}/{todaystr}/{input}/{input}.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff")
+
+            #set sequence location for interproscan
+            shell("sed -i 's,\({input}\)\(.*ID=\)\(.*\)\(_mRNA.*\),\\3\\2\\3\\4,g' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf")
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$1]=$4;b[$1]=$5; next}}{{$4=a[$1]; $5=b[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff")
+
+            #clean up interpro scan file
+            shell("sed -n -i '/##FASTA/q;p' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff")
+            shell("sed -i 's/{input}_[[:digit:]]\+[[:blank:]]\+/{input}\t/; s/##sequence-region.*//; s/ID=match$.*;signature/signature/; s/Target={input}_[[:digit:]]\+[[:blank:]]\+[[:digit:]]\+[[:blank:]]\+[[:digit:]]\+//; s/;status=T//; s/date\x3d[[:digit:]]\+\x2d[[:digit:]]\+\x2d[[:digit:]]\+\x3b//g' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff")
+            shell("sed -i '/{input}\t\x2e\tpolypeptide/d' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff")
+            shell("tr -s '\n' < {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3")
+            shell("sed -i 's,\({input}\t\)\([[:alpha:]]\+\)\(\t.*\),\\1\\2\\3;inference=Predicted by \\2,g' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3")
+
+            #add attributes to prokka CDS
+            shell("sed -i 's/protein_match/CDS/g' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3")
+            shell("grep 'Phobius' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3")
+            shell("grep 'TMHMM' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3")
+            shell("grep 'Pfam' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_pfam.edit.gff3")
+            shell("grep 'ProSiteProfiles' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3")
+            shell("grep 'ProSitePatterns' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propat.edit.gff3")
+            shell("grep 'ProDom' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_prodom.edit.gff3")
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff")
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff")
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_pfam.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff")
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff")
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propat.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propat.edit.gff")
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_prodom.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propat.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.interpro.edit.gff")
+
+            #clean up signalp files
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$1]=$4;b[$1]=$5; next}}{{$4=a[$1]; $5=b[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.edit.gff3")
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{$9=\x22;product=\x22$3\x22;source=SignalP5.0\x22; $3=\x22CDS\x22; print}}'  {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.edit.gff3 >  {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.edit.2.gff3")
+            shell("sed 's/{input}_[0-9]\{{5\}}\t/{input}\t/g' {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.edit.2.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.final.gff3 ")
+            #add annotations from signaP to prokka gff working file
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.final.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.interpro.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.gff")
+
+            #clean up bTSSfinder files to match desired gff3 format
+            shell("cp {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.gff {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
+            shell("sed -i 's/tss\t/Promoter\t/; s/promoter=/note=/g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
+            shell("sed -i 's,\(sigma70\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)$,\\1 promoter \\2 \\3 \\4 \\5 predicted by bTSSfinder v1.206,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
+            shell("cp {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
+            shell("sed -i 's,.*\(\tbtssfinder\tPromoter\t\)[[:digit:]]\+\t[[:digit:]]\+\t\(.*\t\)\(note=sigma70 promoter box[[:digit:]]\+pos=\)\([[:digit:]]\+\)\(.*box[[:digit:]]\+pos=\)\([[:digit:]]\+\)\(.*\)$,{input}\\1\\4\t\\6\t\\2\\3\\4\\5\\6\\7,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
+            shell("sed -i 's,\(box[[:digit:]]\+[[:alpha:]]\+\)=\([[:digit:]]\+\),\\1:\\2,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
+            shell("sed -i '1,8d' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
+
+            #create gff3 format from transterm .bag file
+            shell("sed 's/.*{input}_[0-9]\{{5\}}/{input}\tTranstermHP\tTerminator\t/; s/.*NONE.*//g' {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.bag > {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.bag")
+            shell("tr -s '\n' < {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.bag > {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.gff")
+            shell("sed -i 's,\({input}\tTranstermHP\tTerminator\t\)[[:blank:]]\+\([[:digit:]]\+\)[[:blank:]]\+\x2e\x2e[[:blank:]]\+\([[:digit:]]\+\)[[:blank:]]\+\([\x2b\x2d]\)[[:blank:]]\+[\x2d\x2b].*[\x2d\x2b][[:digit:]]\+\x2e[[:digit:]]\+[[:blank:]]\+\([[:upper:]]\+\)[[:blank:]]\+\(.*[[:blank:]]\+.*[[:blank:]]\+.*\)[[:blank:]]\+\([[:upper:]]\+\)[[:blank:]]\+[[:digit:]]\+[[:blank:]]\+[[:digit:]]\+$,\\1\\2\t\\3\t\x2e\t\\4\t\x2e\tnote=Rho-Independent Terminator predicted by TranstermHP v2.08,g' {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.gff")
+            shell("tr -s '[[:blank:]]' < {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.final.gff3")
+
+            #clean up VOG hmmsearch file
+            shell("sed 's/\(.*\)aa_from=.*\(name=\x22VOG[[:digit:]]\+\x22\);.*/\\1\\2/g' {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_filter.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_hmm.edit.gff")
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$1]=$4;b[$1]=$5; next}}{{$4=a[$1]; $5=b[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf  {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_hmm.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_hmm.final.gff")
+            #add VOG to prokka CDS
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{print $0,a[$3$4]}}' {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_hmm.final.gff  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.2.gff")
+            shell("sed -i 's/\tname=/;Ontology_term=/g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.2.gff")
+
+            #clean up parts of prokka gff file. We don't need the mRNA feature anymore, and clean up inference.
+            shell("sed 's,\(inference=ab initio prediction:Prodigal:2.6.*sequence:RefSeq:\)\(.*\)\(;locus_tag=.*product=\)\(.*\)\s\[\(.*\)\],\\1\\2\\3\\4;note=Similar to \\5 \\4 \\2,g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.2.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff")
+            shell("sed -i 's/\t\x3b/\x3b/; s/.*\tmRNA\t.*//g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff")
+            shell("tr -s '\n' < {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.final.gff")
+
+            #copy files to _gff folder
+            shell("cp {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.final.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_gff")
+            shell("cp {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_gff")
+            shell("cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.final.gff {ANNOTDIR}/{todaystr}/{input}/{input}_gff")
+
+            #remove temp files
+            shell("find {ANNOTDIR}/{todaystr}/{input} -name \*.edit.* -type f -delete")
+
+            #merge gff files
+            shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_gff/*.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_gff/{input}_prokka.final.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_gff/{input}.master.gff3")
+
+        else:
+            shell('echo Clean up complete. Annotation has finished!')
