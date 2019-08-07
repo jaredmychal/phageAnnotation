@@ -257,9 +257,10 @@ rule blastreads:
 
 
 #clean up all of the resulting output files from each tool, then merge them into one gff3 file which we view in genious
+#this rule also calls all other output files desired
 
 rule gff_clean:
-    input: PROKKA, PVOG, CDSPRED, BTSSFIND, TTHP, TRNASCAN, SIGNALP, INTERPROSCAN
+    input: PROKKA, PVOG, BTSSFIND, TTHP, TRNASCAN, SIGNALP, INTERPROSCAN
     output: expand("{annotdir}/{today}/{phage}/{phage}_gff/{phage}.master.gff3",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     priority: 29
     run:
@@ -269,14 +270,14 @@ rule gff_clean:
             shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_gff')
             #generate file to provide sequence location mapping of CDS in all following steps
             shell("{GFFREAD_BIN} {ANNOTDIR}/{todaystr}/{input}/{input}.gff -g {ANNOTDIR}/{todaystr}/{input}/{input}.faa --tlf > {ANNOTDIR}/{todaystr}/{input}/{input}.tlf")
+            shell("sed -i 's,\({input}\)\(.*ID=\)\(.*\)\(_mRNA.*\),\\3\\2\\3\\4,g' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf")
             #add start codons to prokka gff files
             shell("awk '/]$/{{printf $0\x22\t\x22; getline; print substr ($0,0,3)}}' {ANNOTDIR}/{todaystr}/{input}/{input}.ffn > {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.gff")
             shell("sed -i 's,>\({input}_[[:digit:]]\+\)\([[:blank:]]\+.*\t\)\([[:alpha:]]\+\)$,\\1\t\\2CDS\tC4\tC5\tC6\tC7\tC8\t;start_codon=\\3,g' {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.gff")
-            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{b[$1]=$4;c[$1]=$5; next}}{{$4=b[$1]; $5=c[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.2.gff")
+            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$1]=$4;b[$1]=$5; next}}{{$4=a[$1]; $5=b[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.2.gff")
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.2.gff {ANNOTDIR}/{todaystr}/{input}/{input}.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff")
 
             #set sequence location for interproscan features so they match full genome coordinates
-            shell("sed -i 's,\({input}\)\(.*ID=\)\(.*\)\(_mRNA.*\),\\3\\2\\3\\4,g' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf")
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$1]=$4;b[$1]=$5; next}}{{$4=a[$1]; $5=b[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff")
 
             #clean up interpro scan file. Remove some features we don't need, change the format of some other parts. Mostly formatting
@@ -288,18 +289,18 @@ rule gff_clean:
 
             #add attributes to prokka CDS by parsing each program type into a seperate file then appending to the prokka gff feature column. this ensures each type of program result is appended and not just the first match
             shell("sed -i 's/protein_match/CDS/g' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3")
-            shell("grep 'Phobius' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3")
-            shell("grep 'TMHMM' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3")
-            shell("grep 'Pfam' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_pfam.edit.gff3")
-            shell("grep 'ProSiteProfiles' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3")
-            shell("grep 'ProSitePatterns' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propat.edit.gff3")
-            shell("grep 'ProDom' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_prodom.edit.gff3")
-            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff")
-            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff")
-            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_pfam.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff")
-            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff")
-            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propat.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propat.edit.gff")
-            shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_prodom.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propat.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.interpro.edit.gff")
+            shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'Phobius' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 || true")
+            shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'TMHMM' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3 || true")
+            shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'Pfam' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_pfam.edit.gff3 || true")
+            shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'ProSiteProfiles' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3 || true")
+            shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'ProSitePatterns' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propat.edit.gff3 || true")
+            shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'ProDom' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_prodom.edit.gff3 || true")
+            shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff; fi")
+            shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff; fi")
+            shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_pfam.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_pfam.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff; fi")
+            shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff; fi")
+            shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propat.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propat.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propat.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propat.edit.gff; fi")
+            shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_prodom.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_prodom.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propat.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.interpro.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propat.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.interpro.edit.gff; fi")
 
             #clean up signalp files to match the correct sequence location of the full genome
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$1]=$4;b[$1]=$5; next}}{{$4=a[$1]; $5=b[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.gff3 > {ANNOTDIR}/{todaystr}/{input}/{input}_signalp/{input}_signalp.edit.gff3")
@@ -311,9 +312,9 @@ rule gff_clean:
             #clean up bTSSfinder files to match desired gff3 format and ensure the correct sequence locations are used and not the integenic region locations
             shell("grep '##sequence-region' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.gff | sed 's,\([[:digit:]]\+\)\x2d\([[:digit:]]\+\),\\1 \\2,g' > {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_intergene.edit.gff")
             shell("cp {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.gff {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
-            shell("sed -i 's/tss\t/Promoter\t/; s/\([[:digit:]]\+\)\x2d\([[:digit:]]\+\)/\t\\1\t\\2\t/; s/promoter=/note=/g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
-            shell("sed -i 's,\(sigma70\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)$,\\1 promoter \\2 \\3 \\4 \\5 predicted by bTSSfinder v1.206,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
-            shell("sed -i 's,\(.*btssfinder\tPromoter\t\)[[:digit:]]\+\t[[:digit:]]\+\t\(.*\t\)\(note=sigma70 promoter box[[:digit:]]\+pos=\)\([[:digit:]]\+\)\(.*box[[:digit:]]\+pos=\)\([[:digit:]]\+\)\(.*\)$,\\1\\4\t\\6\t\\2\\3\\4\\5\\6\\7,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
+            shell("sed -i 's/tss\t/Promoter\t/; s/\([[:digit:]]\+\)\x2d\([[:digit:]]\+\)/\t\\1\t\\2\t/; s/promoter=/Note=/g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
+            shell("sed -i 's,\(sigma70\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)\x3b\(box.*=.*\)$,\\1 promoter \\2 \\3 \\4 \\5; inference=predicted by bTSSfinder v1.206,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
+            shell("sed -i 's,\(.*btssfinder\tPromoter\t\)[[:digit:]]\+\t[[:digit:]]\+\t\(.*\t\)\(Note=sigma70 promoter box[[:digit:]]\+pos=\)\([[:digit:]]\+\)\(.*box[[:digit:]]\+pos=\)\([[:digit:]]\+\)\(.*\)$,\\1\\4\t\\6\t\\2\\3\\4\\5\\6\\7,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff")
             shell("awk -F'\t' -v OFS='\t' '{{$7=$7+$2; $8=$8+$2}} {{print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.edit.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
             shell("sed -i 's,\(box[[:digit:]]\+[[:alpha:]]\+\)=\([[:digit:]]\+\),\\1:\\2,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
             shell("sed -i 's/.*btssfinder\sPromoter/{input}\tbtssfinder\tPromoter'/g {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
@@ -322,7 +323,7 @@ rule gff_clean:
             #create gff3 format from transterm .bag file produced
             shell("sed 's/.*{input}_[0-9]\{{5\}}/{input}\tTranstermHP\tTerminator\t/; s/.*NONE.*//g' {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.bag > {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.bag")
             shell("tr -s '\n' < {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.bag > {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.gff")
-            shell("sed -i 's,\({input}\tTranstermHP\tTerminator\t\)[[:blank:]]\+\([[:digit:]]\+\)[[:blank:]]\+\x2e\x2e[[:blank:]]\+\([[:digit:]]\+\)[[:blank:]]\+\([\x2b\x2d]\)[[:blank:]]\+[\x2d\x2b].*[\x2d\x2b][[:digit:]]\+\x2e[[:digit:]]\+[[:blank:]]\+\([[:upper:]]\+\)[[:blank:]]\+\(.*[[:blank:]]\+.*[[:blank:]]\+.*\)[[:blank:]]\+\([[:upper:]]\+\)[[:blank:]]\+[[:digit:]]\+[[:blank:]]\+[[:digit:]]\+$,\\1\\2\t\\3\t\x2e\t\\4\t\x2e\tnote=Rho-Independent Terminator predicted by TranstermHP v2.08,g' {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.gff")
+            shell("sed -i 's,\({input}\tTranstermHP\tTerminator\t\)[[:blank:]]\+\([[:digit:]]\+\)[[:blank:]]\+\x2e\x2e[[:blank:]]\+\([[:digit:]]\+\)[[:blank:]]\+\([\x2b\x2d]\)[[:blank:]]\+[\x2d\x2b].*[\x2d\x2b][[:digit:]]\+\x2e[[:digit:]]\+[[:blank:]]\+\([[:upper:]]\+\)[[:blank:]]\+\(.*[[:blank:]]\+.*[[:blank:]]\+.*\)[[:blank:]]\+\([[:upper:]]\+\)[[:blank:]]\+[[:digit:]]\+[[:blank:]]\+[[:digit:]]\+$,\\1\\2\t\\3\t\x2e\t\\4\t\x2e\tNote=Rho-Independent Terminator predicted by TranstermHP v2.08,g' {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.gff")
             shell("tr -s '[[:blank:]]' < {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.final.gff3")
 
             #clean up VOG hmmsearch file so we can append it to the prokka feature column
@@ -333,7 +334,7 @@ rule gff_clean:
             shell("sed -i 's/\tname=/;Ontology_term=/g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.2.gff")
 
             #clean up parts of prokka gff file. We don't need the mRNA feature anymore, and clean up inference.
-            shell("sed 's,\(inference=ab initio prediction:Prodigal:2.6.*sequence:RefSeq:\)\(.*\)\(;locus_tag=.*product=\)\(.*\)\s\[\(.*\)\],\\1\\2\\3\\4;note=Similar to \\5 \\4 \\2,g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.2.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff")
+            shell("sed 's,\(inference=ab initio prediction:Prodigal:2.6.*sequence:RefSeq:\)\(.*\)\(;locus_tag=.*product=\)\(.*\)\s\[\(.*\)\],\\1\\2\\3\\4;Note=Similar to \\5 \\4 \\2,g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.2.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff")
             shell("sed -i 's/\t\x3b/\x3b/; s/.*\tmRNA\t.*//g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff")
             shell("tr -s '\n' < {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.final.gff")
 
@@ -344,6 +345,8 @@ rule gff_clean:
 
             #remove temp files
             shell("find {ANNOTDIR}/{todaystr}/{input} -name \*.edit.* -type f -delete")
+            shell("rm -rf temp")
+            shell("rm -f ./-frame")
 
             #merge gff files
             shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_gff/*.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_gff/{input}_prokka.final.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_gff/{input}.master.gff3")
