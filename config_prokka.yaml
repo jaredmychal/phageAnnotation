@@ -12,6 +12,8 @@ virus_protein: '/home/jared/anaconda3/envs/PhagePipe/db/trusted_protein/phage_re
 caudovirales_protein: '/home/jared/anaconda3/envs/PhagePipe/db/trusted_protein/RefSeq_Viral_Proteins'
 # Path to tmhmm model file
 tmhmm_model: '/home/jared/anaconda3/envs/PhagePipe/TMHMM2.0.model'
+#path to transterm model file
+expat_model: '/home/jared/anaconda3/envs/PhagePipe/data/expterm.dat'
 # Path to hmm db
 #hmmdb: '/home/jared/miniconda3/envs/PhagePipe/db/hmm/vog.hmm'
 hmmdb: '/home/jared/anaconda3/envs/PhagePipe/db/hmm/vog.hmm'
@@ -23,6 +25,8 @@ genemark: '/home/jared/genemark_suite_linux_64/gmsuite'
 vgas: '/home/jared/vgas'
 #path to bTSSfinder
 btssfinder: '/home/jared/BTSSFINDER'
+#path to GBKtoPTT script
+gbkptt: '/home/jared/gbk2ptt/GBKtoPTT.pl'
 #path to gffread
 gffread: '/home/jared/gfftools/gffread/gffread'
 #path to mgkit
