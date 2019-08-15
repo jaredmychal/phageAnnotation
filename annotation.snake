@@ -14,6 +14,7 @@ GBKDIR = config['genbank']
 FASTADIR = config['fasta_samples']
 ANNOTDIR = config['prokka_annotated']
 TMHMM_MODEL = config['tmhmm_model']
+EXPAT_MODEL = config['expat_model']
 PROKKA_HMM_DB = config['hmmdb']
 INTERPRO_BIN = config['interproscan']
 GENEMARK_BIN = config['genemark']
@@ -21,6 +22,7 @@ VGAS_BIN = config['vgas']
 BTSSFIND_BIN = config['btssfinder']
 GFFREAD_BIN = config['gffread']
 MGKIT_BIN = config['mgkit']
+GBKPTT = config['gbkptt']
 VIRUS_PROTEIN = config['virus_protein']
 CAUDOVIRALES_PROTEIN = config['caudovirales_protein']
 BLASTDB = config['blastdb']
@@ -69,9 +71,9 @@ rule prokka:
         for file in FASTAREADS:
             input = file
             shell("echo Begginning annotation for {input} with prokka...")
-            shell("prokka --quiet --kingdom Viruses --addmrna --cdsrnaolap --protein {VIRUS_PROTEIN} --gcode 11 --prefix {input} --locustag {input} --addgenes --rfam --outdir {ANNOTDIR}/{todaystr}/{input} {FASTADIR}/{input}.fasta --force")
+            shell("prokka --quiet --kingdom Viruses --genus Phages --usegenus --addmrna --cdsrnaolap --gcode 11 --prefix {input} --locustag {input} --addgenes --rfam --outdir {ANNOTDIR}/{todaystr}/{input} {FASTADIR}/{input}.fasta --force")
             #We need to generate a .ptt file for transtermHP to use by using gbk2ptt
-            shell('perl /home/jared/gbk2ptt/GBKtoPTT.pl < {ANNOTDIR}/{todaystr}/{input}/{input}.gbk > {ANNOTDIR}/{todaystr}/{input}/{input}.ptt')
+            shell('perl {GBKPTT} < {ANNOTDIR}/{todaystr}/{input}/{input}.gbk > {ANNOTDIR}/{todaystr}/{input}/{input}.ptt')
             shell('echo Complete!')
         else:
             shell ("echo Annotation complete for all fasta files in {FASTADIR}!")
@@ -86,7 +88,7 @@ rule pvog_search:
             input = file
             shell("echo Begginning hmmsearch for {input} with pVOG...")
             shell("hmmsearch --domtblout {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment.tbl -A {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment.align -o {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_hmm {PROKKA_HMM_DB} {ANNOTDIR}/{todaystr}/{input}/{input}.faa")
-            #convery resulting files into a gff file, then filter the results so we end up with a single gff file with only the best result for each CDS.
+            #convert resulting files into a gff file, then filter the results so we end up with a single gff file with only the best result for each CDS.
             shell("{MGKIT_BIN}/hmmer2gff -c -no-frame -db pVOG -f CDS {ANNOTDIR}/{todaystr}/{input}/{input}.faa {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment.tbl -o {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment.gff")
             shell("sort -s -k 1,1 -k 7,7 {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment_sort.gff")
             shell("{MGKIT_BIN}/filter-gff sequence -t -a bitscore -f max {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_alignment_sort.gff {ANNOTDIR}/{todaystr}/{input}/{input}_hmmsearch/{input}_filter.gff")
@@ -104,7 +106,7 @@ rule cds_predict:
     run:
         for file in FASTAREADS:
             input = file
-            shell('echo Searching for predicted CDS for {input}...')
+            shell('echo Searching for predicted CDS in {input}...')
             shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}')
             shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_gms')
             shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_vgas')
@@ -174,7 +176,7 @@ rule transterm:
             input = file
             shell('echo Searching for predicted Rho-Independent Terminators in {input}...')
             shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_tthp')
-            shell('transterm -p /home/jared/anaconda3/envs/PhagePipe/data/expterm.dat {FASTADIR}/{input}.fasta {ANNOTDIR}/{todaystr}/{input}/{input}.ptt --bag-output {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.bag > {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.tt')
+            shell('transterm -p {EXPAT_MODEL} {FASTADIR}/{input}.fasta {ANNOTDIR}/{todaystr}/{input}/{input}.ptt --bag-output {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.bag > {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.tt')
             shell('echo Complete!')
         else:
             shell('echo Completed Transterm-HP Searching')
@@ -230,7 +232,7 @@ rule signalp:
             shell('echo Complete!')
         else:
             shell("echo Completed Protein Prediction!")
-1
+
 
 # run INTERPROSCAN to run pfam, TIGRFAM, Phobius, and TMHMM in one step.
 
@@ -254,7 +256,8 @@ rule interpro_scan:
 
 
 #BLAST protein files produce by prokka against NCBI Protein Blast remote database
-#This has not yet completed on my laptop, and is not fully tested
+#This has not yet completed on my laptop, and is not fully tested.
+#currently set to blastp the locally curated phage protein database
 
 rule blastreads:
     input: PROKKA
