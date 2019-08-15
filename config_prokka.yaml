@@ -3,11 +3,11 @@ fasta_samples: '/home/jared/Phages/assembled_data/fast_files'
 # Path to GenBank directory
 genbank: '/home/rodrigo/phages/Genbank'
 # Path to BLAST protein directory
-blastdb: '/home/jared/blast_db'
+blastdb: 'home/jared/anaconda3/envs/PhagePipe/db/genus/Phages'
 # Path to output annotated files to
 prokka_annotated: '/home/jared/Phages/assembled_data/annotations'
 #Path to virus protein file (all genbank viruses)
-virus_protein: '/home/jared/anaconda3/envs/PhagePipe/db/trusted_protein/viruses_gbk.faa'
+virus_protein: '/home/jared/anaconda3/envs/PhagePipe/db/trusted_protein/phage_ref_seq_proteins.fasta'
 #Path to Caudovirales protein file (all refseq Caudovirales)
 caudovirales_protein: '/home/jared/anaconda3/envs/PhagePipe/db/trusted_protein/RefSeq_Viral_Proteins'
 # Path to tmhmm model file
@@ -19,14 +19,10 @@ hmmdb: '/home/jared/anaconda3/envs/PhagePipe/db/hmm/vog.hmm'
 interproscan: '/home/jared/my_interproscan/interproscan-5.36-75.0'
 #Path to GeneMarkS suite
 genemark: '/home/jared/genemark_suite_linux_64/gmsuite'
-#Path to glimmer bin
-glimmer3: '/home/jared/glimmer3.02/bin'
 #Path to vgas
 vgas: '/home/jared/vgas'
 #path to bTSSfinder
 btssfinder: '/home/jared/BTSSFINDER'
-#path to biocode gff
-biocode_gff: '/home/jared/biocode/gff'
 #path to gffread
 gffread: '/home/jared/gfftools/gffread/gffread'
 #path to mgkit
