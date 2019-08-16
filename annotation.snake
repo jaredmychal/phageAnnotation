@@ -66,8 +66,6 @@ rule prokka:
     output: expand("{annotdir}/{today}/{phage}/{phage}.ptt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     priority: 50
     run:
-        #check we have the correct java version active. Requires sudo or root priv
-        shell("sudo update-java-alternatives --jre-headless --jre --set java-1.11.0-openjdk-amd64")
         for file in FASTAREADS:
             input = file
             shell("echo Begginning annotation for {input} with prokka...")
@@ -285,6 +283,7 @@ rule gff_clean:
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.2.gff {ANNOTDIR}/{todaystr}/{input}/{input}.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff")
 
             #set sequence location for interproscan features so they match full genome coordinates
+            shell("mv {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff")
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$1]=$4;b[$1]=$5; next}}{{$4=a[$1]; $5=b[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff")
 
             #clean up interpro scan file. Remove some features we don't need, change the format of some other parts. Mostly formatting
