@@ -1,0 +1,69 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	1	blastreads
+	1	btss_finder
+	1	gff_clean
+	1	interpro_scan
+	1	signalp
+	1	tRNAscan
+	1	transterm
+	8
+
+[Thu Aug 15 18:20:34 2019]
+rule btss_finder:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.ptt
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_btss/
+    jobid: 5
+    priority: 46
+
+[Thu Aug 15 18:21:52 2019]
+Finished job 5.
+1 of 8 steps (12%) done
+
+[Thu Aug 15 18:21:52 2019]
+rule transterm:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.ptt
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_tthp/pSf-2_tthp.tt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_tthp/12K_NY_tthp.tt
+    jobid: 6
+    priority: 45
+
+[Thu Aug 15 18:21:53 2019]
+Finished job 6.
+2 of 8 steps (25%) done
+
+[Thu Aug 15 18:21:53 2019]
+rule tRNAscan:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.ptt
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_tRNA/pSf-2_tRNA.txt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_tRNA/12K_NY_tRNA.txt
+    jobid: 7
+    priority: 40
+
+[Thu Aug 15 18:21:57 2019]
+Finished job 7.
+3 of 8 steps (38%) done
+
+[Thu Aug 15 18:21:57 2019]
+rule signalp:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.ptt
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_signalp/pSf-2_signalp.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_signalp/12K_NY_signalp.gff3
+    jobid: 8
+    priority: 35
+
+[Thu Aug 15 18:22:39 2019]
+Finished job 8.
+4 of 8 steps (50%) done
+
+[Thu Aug 15 18:22:39 2019]
+rule interpro_scan:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.ptt
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_interpro/pSf-2.faa.gff, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_interpro/12K_NY.faa.gff
+    jobid: 9
+    priority: 30
+
+Terminating processes on user request, this might take some time.
+Complete log: /home/jared/phageAnnote/.snakemake/log/2019-08-15T182034.578900.snakemake.log

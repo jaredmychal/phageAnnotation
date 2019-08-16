@@ -1,0 +1,3 @@
+RuleException in line 244 of /home/jared/phageAnnote/annotation.snake:
+Conda environments are only allowed with shell, script, or wrapper directives (not with run).
+  File "/home/jared/phageAnnote/annotation.snake", line 244, in <module>

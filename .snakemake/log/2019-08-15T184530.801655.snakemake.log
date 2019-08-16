@@ -1,0 +1,4 @@
+Building DAG of jobs...
+WildcardError in line 239 of /home/jared/phageAnnote/annotation.snake:
+Wildcards in input files cannot be determined from output files:
+'FASTAREADS'

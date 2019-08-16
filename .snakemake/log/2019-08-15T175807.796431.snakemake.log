@@ -1,0 +1,38 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	abricate
+	1	all
+	1	blastreads
+	1	btss_finder
+	1	gff_clean
+	1	interpro_scan
+	1	signalp
+	1	tRNAscan
+	1	transterm
+	9
+
+[Thu Aug 15 17:58:07 2019]
+rule abricate:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.ptt
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_amr/pSf-2_virulence.tbl, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_amr/12K_NY_virulence.tbl
+    jobid: 4
+    priority: 47
+
+[Thu Aug 15 17:58:10 2019]
+Finished job 4.
+1 of 9 steps (11%) done
+
+[Thu Aug 15 17:58:10 2019]
+rule btss_finder:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.ptt
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_btss/
+    jobid: 5
+    priority: 46
+
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /home/jared/phageAnnote/.snakemake/log/2019-08-15T175807.796431.snakemake.log

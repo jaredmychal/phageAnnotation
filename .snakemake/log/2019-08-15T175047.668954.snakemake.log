@@ -1,0 +1,49 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	abricate
+	1	all
+	1	blastreads
+	1	btss_finder
+	1	gff_clean
+	1	interpro_scan
+	1	prokka
+	1	pvog_search
+	1	signalp
+	1	tRNAscan
+	1	transterm
+	11
+
+[Thu Aug 15 17:50:47 2019]
+rule prokka:
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.ptt
+    jobid: 2
+    priority: 50
+
+[Thu Aug 15 17:51:30 2019]
+Finished job 2.
+1 of 11 steps (9%) done
+
+[Thu Aug 15 17:51:30 2019]
+rule pvog_search:
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_hmmsearch/pSf-2_hmm, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_hmmsearch/12K_NY_hmm
+    jobid: 3
+    priority: 49
+
+[Thu Aug 15 17:52:42 2019]
+Finished job 3.
+2 of 11 steps (18%) done
+
+[Thu Aug 15 17:52:42 2019]
+rule abricate:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.ptt
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_amr/pSf-2_virulence.tbl, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_amr/12K_NY_virulence.tbl
+    jobid: 4
+    priority: 47
+
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /home/jared/phageAnnote/.snakemake/log/2019-08-15T175047.668954.snakemake.log

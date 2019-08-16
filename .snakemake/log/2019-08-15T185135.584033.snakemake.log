@@ -1,0 +1,13 @@
+Building DAG of jobs...
+Creating conda environment envs/interproscan.yaml...
+Downloading remote packages.
+CreateCondaEnvironmentException:
+Could not create conda environment from /home/jared/phageAnnote/envs/interproscan.yaml:
+Collecting package metadata (repodata.json): ...working... WARNING conda.base.context:use_only_tar_bz2(632): Conda is constrained to only using the old .tar.bz2 file format because you have conda-build installed, and it is <3.18.3.  Update or remove conda-build to get smaller downloads and faster extractions.
+done
+Solving environment: ...working... failed
+
+ResolvePackageNotFound: 
+  - openjdk=8.0.12
+
+

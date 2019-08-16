@@ -1,0 +1,27 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	abricate
+	1	all
+	1	blastreads
+	1	btss_finder
+	1	gff_clean
+	1	interpro_scan
+	1	prokka
+	1	pvog_search
+	1	signalp
+	1	tRNAscan
+	1	transterm
+	11
+
+[Thu Aug 15 17:50:22 2019]
+rule prokka:
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/AY587007/AY587007.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/YPD/YPD.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/AXO103A/AXO103A.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/AXO111B/AXO111B.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/AHF125/AHF125.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/AXO103B/AXO103B.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/AXO103C/AXO103C.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/NPB/NPB.ptt
+    jobid: 2
+    priority: 50
+
+Terminating processes on user request, this might take some time.
+Complete log: /home/jared/phageAnnote/.snakemake/log/2019-08-15T175022.276733.snakemake.log

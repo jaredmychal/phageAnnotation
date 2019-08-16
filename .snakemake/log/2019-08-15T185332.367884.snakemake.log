@@ -1,0 +1,33 @@
+Building DAG of jobs...
+Creating conda environment envs/interproscan.yaml...
+Downloading remote packages.
+Environment for envs/interproscan.yaml created (location: .snakemake/conda/064a0746)
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	interpro_scan
+	1
+
+[Thu Aug 15 18:54:01 2019]
+rule interpro_scan:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.faa
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_interpro/, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_interpro/
+    jobid: 0
+    priority: 30
+
+Activating conda environment: /home/jared/phageAnnote/.snakemake/conda/064a0746
+Terminating processes on user request, this might take some time.
+[Thu Aug 15 18:57:22 2019]
+Error in rule interpro_scan:
+    jobid: 0
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_interpro/, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_interpro/
+    conda-env: /home/jared/phageAnnote/.snakemake/conda/064a0746
+    shell:
+        /home/jared/my_interproscan/interproscan-5.36-75.0/interproscan.sh -i /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.faa /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.faa --appl tmhmm,phobius,pfam,ProSiteProfiles,ProSitePatterns,ProDom --iprlookup --goterms --pathways -cpu 1 -d /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_interpro/ /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_interpro/
+        (exited with non-zero exit code)
+
+Removing output files of failed job interpro_scan since they might be corrupted:
+/home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_interpro/, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_interpro/
+Complete log: /home/jared/phageAnnote/.snakemake/log/2019-08-15T185332.367884.snakemake.log

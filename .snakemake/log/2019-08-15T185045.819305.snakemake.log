@@ -1,0 +1,2 @@
+SyntaxError in line 250 of /home/jared/phageAnnote/annotation.snake:
+No rule keywords allowed after run/shell/script/wrapper/cwl in rule interpro_scan. (annotation.snake, line 250)

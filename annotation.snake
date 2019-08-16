@@ -7,7 +7,7 @@ today = datetime.date.today()
 todaystr = today.isoformat()
 
 # Globals
-configfile: 'config_prokka.yaml'
+configfile: 'envs/config_prokka.yaml'
 
 # Path to working directories as determined in config_prokka
 GBKDIR = config['genbank']
@@ -237,23 +237,11 @@ rule signalp:
 # run INTERPROSCAN to run pfam, TIGRFAM, Phobius, and TMHMM in one step.
 
 rule interpro_scan:
-    input: PROKKA
-    output: expand("{annotdir}/{today}/{phage}/{phage}_interpro/{phage}.faa.gff",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    input: expand("{annotdir}/{today}/{phage}/{phage}.faa",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    output: directory(expand("{annotdir}/{today}/{phage}/{phage}_interpro/",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS))
+    conda: "envs/interproscan.yaml"
     priority: 30
-    run:
-        #we have to chage java versions here for interproscan to run
-        shell ("sudo update-java-alternatives --jre-headless --jre --set java-1.8.0-openjdk-amd64")
-        for file in FASTAREADS:
-            input = file
-            shell('echo Begginning protein prediction with InterproScan for {input}.')
-            shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_interpro')
-            shell("{INTERPRO_BIN}/interproscan.sh -i {ANNOTDIR}/{todaystr}/{input}/{input}.faa --appl tmhmm,phobius,pfam,ProSiteProfiles,ProSitePatterns,ProDom --iprlookup --goterms --pathways -cpu 1 -d {ANNOTDIR}/{todaystr}/{input}/{input}_interpro")
-            shell("mv {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff")
-            shell('echo Complete!')
-        else:
-            shell("sudo update-java-alternatives --jre-headless --jre --set java-1.11.0-openjdk-amd64")
-            shell ("echo Completed Protein Preiction!")
-
+    shell: "{INTERPRO_BIN}/interproscan.sh -i {input} --appl tmhmm,phobius,pfam,ProSiteProfiles,ProSitePatterns,ProDom --iprlookup --goterms --pathways -cpu 1 -d {output}"
 
 #BLAST protein files produce by prokka against NCBI Protein Blast remote database
 #This has not yet completed on my laptop, and is not fully tested.
@@ -279,7 +267,7 @@ rule blastreads:
 #this rule also calls all other output files desired
 
 rule gff_clean:
-    input: PROKKA, PVOG, ABRICATE, BTSSFIND, TTHP, TRNASCAN, SIGNALP, INTERPROSCAN, BLAST
+    input: PROKKA, PVOG, ABRICATE, BTSSFIND, TTHP, TRNASCAN, SIGNALP, INTERPROSCAN
     output: expand("{annotdir}/{today}/{phage}/{phage}_gff/{phage}.master.gff3",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     priority: 29
     run:

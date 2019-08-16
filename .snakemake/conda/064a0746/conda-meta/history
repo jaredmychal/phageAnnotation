@@ -1,0 +1,5 @@
+==> 2019-08-15 18:53:59 <==
+# cmd: /home/jared/anaconda3/bin/conda-env create --file /home/jared/phageAnnote/.snakemake/conda/064a0746.yaml --prefix /home/jared/phageAnnote/.snakemake/conda/064a0746
+# conda version: 4.7.5
++conda-forge::openjdk-8.0.192-h14c3975_1003
+# update specs: ['openjdk=8.0.192']

@@ -1,0 +1,19 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	interpro_scan
+	1
+
+[Thu Aug 15 18:40:26 2019]
+rule interpro_scan:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2.ptt, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY.ptt
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/pSf-2/pSf-2_interpro/pSf-2.faa.gff, /home/jared/Phages/assembled_data/annotations/2019-08-15/12K_NY/12K_NY_interpro/12K_NY.faa.gff
+    jobid: 0
+    priority: 30
+
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /home/jared/phageAnnote/.snakemake/log/2019-08-15T184026.303458.snakemake.log
