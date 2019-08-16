@@ -1,0 +1,28 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	interpro_scan
+	1
+
+[Thu Aug 15 20:19:12 2019]
+rule interpro_scan:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5.faa
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_interpro/T7.faa.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_interpro/lambda.faa.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_interpro/T4.faa.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_interpro/RB69.faa.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_interpro/T5.faa.gff3
+    jobid: 0
+    priority: 30
+
+Activating conda environment: /home/jared/phageAnnote/.snakemake/conda/064a0746
+Terminating processes on user request, this might take some time.
+[Thu Aug 15 20:19:29 2019]
+Error in rule interpro_scan:
+    jobid: 0
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_interpro/T7.faa.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_interpro/lambda.faa.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_interpro/T4.faa.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_interpro/RB69.faa.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_interpro/T5.faa.gff3
+    conda-env: /home/jared/phageAnnote/.snakemake/conda/064a0746
+    shell:
+        /home/jared/my_interproscan/interproscan-5.36-75.0/interproscan.sh -i /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7.faa /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda.faa /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4.faa /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69.faa /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5.faa --appl tmhmm,phobius,pfam,ProSiteProfiles,ProSitePatterns,ProDom --iprlookup --goterms --pathways -cpu 1 -d /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_interpro/T7.faa.gff3 /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_interpro/lambda.faa.gff3 /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_interpro/T4.faa.gff3 /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_interpro/RB69.faa.gff3 /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_interpro/T5.faa.gff3
+        (exited with non-zero exit code)
+
+Complete log: /home/jared/phageAnnote/.snakemake/log/2019-08-15T201912.824792.snakemake.log

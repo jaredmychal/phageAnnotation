@@ -1,0 +1,33 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	1	gff_clean
+	1	interpro_scan
+	3
+
+[Thu Aug 15 20:00:26 2019]
+rule interpro_scan:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5.faa
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_interpro/, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_interpro/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_interpro/, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_interpro/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_interpro/
+    jobid: 9
+    priority: 30
+
+Activating conda environment: /home/jared/phageAnnote/.snakemake/conda/064a0746
+[Thu Aug 15 20:01:30 2019]
+Finished job 9.
+1 of 3 steps (33%) done
+
+[Thu Aug 15 20:01:30 2019]
+rule gff_clean:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_hmmsearch/T7_hmm, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_hmmsearch/lambda_hmm, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_hmmsearch/T4_hmm, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_hmmsearch/RB69_hmm, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_hmmsearch/T5_hmm, /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_amr/T7_virulence.tbl, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_amr/lambda_virulence.tbl, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_amr/T4_virulence.tbl, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_amr/RB69_virulence.tbl, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_amr/T5_virulence.tbl, /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_tthp/T7_tthp.tt, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_tthp/lambda_tthp.tt, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_tthp/T4_tthp.tt, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_tthp/RB69_tthp.tt, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_tthp/T5_tthp.tt, /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_tRNA/T7_tRNA.txt, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_tRNA/lambda_tRNA.txt, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_tRNA/T4_tRNA.txt, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_tRNA/RB69_tRNA.txt, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_tRNA/T5_tRNA.txt, /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_signalp/T7_signalp.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_signalp/lambda_signalp.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_signalp/T4_signalp.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_signalp/RB69_signalp.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_signalp/T5_signalp.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_interpro/, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_interpro/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_interpro/, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_interpro/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_interpro/
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_gff/T7.master.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_gff/lambda.master.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_gff/T4.master.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_gff/RB69.master.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_gff/T5.master.gff3
+    jobid: 1
+    priority: 29
+
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /home/jared/phageAnnote/.snakemake/log/2019-08-15T200026.157181.snakemake.log

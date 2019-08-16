@@ -1,0 +1,18 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	interpro_scan
+	1
+
+[Thu Aug 15 21:09:01 2019]
+rule interpro_scan:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5.faa
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_interpro/T7.faa.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_interpro/lambda.faa.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_interpro/T4.faa.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_interpro/RB69.faa.gff3, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_interpro/T5.faa.gff3
+    jobid: 0
+    priority: 30
+
+RuleException in line 242 of /home/jared/phageAnnote/annotation.snake:
+NameError: The name 'NAME' is unknown in this context. Please make sure that you defined that variable. Also note that braces not used for variable access have to be escaped by repeating them, i.e. {{print $1}}

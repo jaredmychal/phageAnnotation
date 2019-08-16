@@ -31,7 +31,7 @@ BLASTDB = config['blastdb']
 FASTAREADS = [os.path.splitext(os.path.basename(f))[0] for f in os.listdir(FASTADIR) if f.endswith('.fasta')]
 
 # Names of output target files for each rule
-PROKKA = expand("{annotdir}/{today}/{phage}/{phage}.ptt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+PROKKA = expand("{annotdir}/{today}/{phage}/{phage}.faa",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 PVOG = expand("{annotdir}/{today}/{phage}/{phage}_hmmsearch/{phage}_hmm",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 CDSPRED = expand("{annotdir}/{today}/{phage}/{phage}_vgas/{phage}_vgas",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 ABRICATE = expand("{annotdir}/{today}/{phage}/{phage}_amr/{phage}_virulence.tbl",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
@@ -40,13 +40,13 @@ TTHP = expand("{annotdir}/{today}/{phage}/{phage}_tthp/{phage}_tthp.tt",today=to
 TRNASCAN = expand("{annotdir}/{today}/{phage}/{phage}_tRNA/{phage}_tRNA.txt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 SIGNALP = expand("{annotdir}/{today}/{phage}/{phage}_signalp/{phage}_signalp.gff3", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 VIRALPRO = expand("{annotdir}/{today}/{phage}/{phage}_viralPRO/{phage}.scores.csv", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
-INTERPROSCAN = expand("{annotdir}/{today}/{phage}/{phage}_interpro/{phage}.faa.gff",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+INTERPROSCAN = expand("{annotdir}/{today}/{phage}/{phage}_interpro/{phage}.faa.gff3",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 BLAST = expand("{annotdir}/{today}/{phage}/{phage}_blastp/{phage}_blast.bsl", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 GFFCLEAN = expand("{annotdir}/{today}/{phage}/{phage}_gff/{phage}.master.gff3",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 
 #initating rule to call for each additional rule to be run
 rule all:
-    input: GFFCLEAN
+    input: expand("{annotdir}/{today}/{phage}/{phage}.faa",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS), GFFCLEAN
 
 
 #Check quality of assembled reads with Quast
@@ -63,7 +63,7 @@ rule quast:
 # Automated anotation with Prokka
 
 rule prokka:
-    output: expand("{annotdir}/{today}/{phage}/{phage}.ptt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+    output: expand("{annotdir}/{today}/{phage}/{phage}.faa",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     priority: 50
     run:
         for file in FASTAREADS:
@@ -127,7 +127,7 @@ rule cds_predict:
 #AMR and E. coli virulence gene search with Abricate
 
 rule abricate:
-    input: PROKKA
+    input: expand("{annotdir}/{today}/{phage}/{phage}.faa",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     output: expand("{annotdir}/{today}/{phage}/{phage}_amr/{phage}_virulence.tbl",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     priority: 47
     run:
@@ -152,12 +152,17 @@ rule btss_finder:
             input = file
             shell('echo Searching for predicted E. coli Sigma70 promoters in {input}...')
             #get intergenic regions for promoter search
-            shell('./get_intergene.py {ANNOTDIR}/{todaystr}/{input}/{input}.gbk')
+            shell('scripts/get_intergene.py {ANNOTDIR}/{todaystr}/{input}/{input}.gbk')
             shell('mv {input}_ign.fasta {ANNOTDIR}/{todaystr}/{input}')
             shell('mkdir -p {ANNOTDIR}/{todaystr}/{input}/{input}_btss')
             #run on intergenic fasta file. look for only e.coli sigma 70 promoters on both strands
             #to do: find way of adding GC content to this command
             shell('bTSSfinder -i {ANNOTDIR}/{todaystr}/{input}/{input}_ign.fasta -o {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss -a 1.96 -c 70 -h 2 -t e')
+            # run a short list of commands to check if any promoters were predicted. If not, we scale back the criteria.
+            shell('cp {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.gff {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.2.gff')
+            shell("sed -i '1,9d' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.2.gff" )
+            shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.2.gff ]]; then echo Promoters found...; else bTSSfinder -i {ANNOTDIR}/{todaystr}/{input}/{input}_ign.fasta -o {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss -a 1.9 -c 70 -h 2 -t e; fi")
+            shell("rm {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.2.gff")
             shell('echo Complete!')
         else:
             shell('echo Completed Searching')
@@ -236,7 +241,7 @@ rule signalp:
 
 rule interpro_scan:
     input: expand("{annotdir}/{today}/{phage}/{phage}.faa",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
-    output: directory(expand("{annotdir}/{today}/{phage}/{phage}_interpro/",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS))
+    output: directory(expand("{annotdir}/{today}/{phage}/{phage}_interpro/{phage}.faa.gff3",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS))
     conda: "envs/interproscan.yaml"
     priority: 30
     shell: "{INTERPRO_BIN}/interproscan.sh -i {input} --appl tmhmm,phobius,pfam,ProSiteProfiles,ProSitePatterns,ProDom --iprlookup --goterms --pathways -cpu 1 -d {output}"
@@ -283,7 +288,7 @@ rule gff_clean:
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_startcodon.edit.2.gff {ANNOTDIR}/{todaystr}/{input}/{input}.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff")
 
             #set sequence location for interproscan features so they match full genome coordinates
-            shell("mv {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff")
+            shell("cp -i {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff")
             shell("awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$1]=$4;b[$1]=$5; next}}{{$4=a[$1]; $5=b[$1]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}.tlf {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.faa.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}.edit.gff")
 
             #clean up interpro scan file. Remove some features we don't need, change the format of some other parts. Mostly formatting
@@ -325,7 +330,6 @@ rule gff_clean:
             shell("sed -i 's,\(box[[:digit:]]\+[[:alpha:]]\+\)=\([[:digit:]]\+\),\\1:\\2,g' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
             shell("sed -i 's/.*btssfinder\sPromoter/{input}\tbtssfinder\tPromoter'/g {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
             shell("sed -i '1,8d' {ANNOTDIR}/{todaystr}/{input}/{input}_btss/{input}_btss.final.gff3")
-
             #create gff3 format from transterm .bag file produced
             shell("sed 's/.*{input}_[0-9]\{{5\}}/{input}\tTranstermHP\tTerminator\t/; s/.*NONE.*//g' {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.bag > {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.bag")
             shell("tr -s '\n' < {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.bag > {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.edit.gff")

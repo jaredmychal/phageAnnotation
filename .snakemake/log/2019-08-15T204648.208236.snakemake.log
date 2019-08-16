@@ -1,0 +1,3 @@
+ValueError in line 31 of /home/jared/phageAnnote/annotation.snake:
+too many values to unpack (expected 1)
+  File "/home/jared/phageAnnote/annotation.snake", line 31, in <module>

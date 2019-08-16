@@ -1,0 +1,5 @@
+Building DAG of jobs...
+InputFunctionException in line 242 of /home/jared/phageAnnote/annotation.snake:
+AttributeError: 'Wildcards' object has no attribute 'todaystr'
+Wildcards:
+

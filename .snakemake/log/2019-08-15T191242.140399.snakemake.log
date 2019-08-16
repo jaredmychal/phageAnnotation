@@ -1,0 +1,59 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	abricate
+	1	all
+	1	btss_finder
+	1	gff_clean
+	1	interpro_scan
+	1	prokka
+	1	pvog_search
+	1	signalp
+	1	tRNAscan
+	1	transterm
+	10
+
+[Thu Aug 15 19:12:42 2019]
+rule prokka:
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5.faa
+    jobid: 2
+    priority: 50
+
+[Thu Aug 15 19:16:24 2019]
+Finished job 2.
+1 of 10 steps (10%) done
+
+[Thu Aug 15 19:16:24 2019]
+rule pvog_search:
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_hmmsearch/T7_hmm, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_hmmsearch/lambda_hmm, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_hmmsearch/T4_hmm, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_hmmsearch/RB69_hmm, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_hmmsearch/T5_hmm
+    jobid: 3
+    priority: 49
+
+[Thu Aug 15 19:19:06 2019]
+Finished job 3.
+2 of 10 steps (20%) done
+
+[Thu Aug 15 19:19:06 2019]
+rule abricate:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5.faa
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_amr/T7_virulence.tbl, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_amr/lambda_virulence.tbl, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_amr/T4_virulence.tbl, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_amr/RB69_virulence.tbl, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_amr/T5_virulence.tbl
+    jobid: 4
+    priority: 47
+
+[Thu Aug 15 19:19:12 2019]
+Finished job 4.
+3 of 10 steps (30%) done
+
+[Thu Aug 15 19:19:12 2019]
+rule btss_finder:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5.faa
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_btss/
+    jobid: 5
+    priority: 46
+
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /home/jared/phageAnnote/.snakemake/log/2019-08-15T191242.140399.snakemake.log

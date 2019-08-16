@@ -1,0 +1,25 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	all
+	1	btss_finder
+	1	gff_clean
+	1	interpro_scan
+	1	signalp
+	1	tRNAscan
+	1	transterm
+	7
+
+[Thu Aug 15 19:20:20 2019]
+rule btss_finder:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5.faa
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_btss/
+    jobid: 5
+    priority: 46
+
+Shutting down, this might take some time.
+Exiting because a job execution failed. Look above for error message
+Complete log: /home/jared/phageAnnote/.snakemake/log/2019-08-15T192019.972664.snakemake.log

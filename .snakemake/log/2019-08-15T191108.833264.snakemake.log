@@ -1,0 +1,8 @@
+Building DAG of jobs...
+MissingInputException in line 267 of /home/jared/phageAnnote/annotation.snake:
+Missing input files for rule gff_clean:
+/home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_interpro
+/home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_interpro
+/home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_interpro
+/home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_interpro
+/home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_interpro

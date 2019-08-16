@@ -1,0 +1,18 @@
+Building DAG of jobs...
+Using shell: /bin/bash
+Provided cores: 1
+Rules claiming more threads will be scaled down.
+Job counts:
+	count	jobs
+	1	btss_finder
+	1
+
+[Thu Aug 15 19:46:40 2019]
+rule btss_finder:
+    input: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69.faa, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5.faa
+    output: /home/jared/Phages/assembled_data/annotations/2019-08-15/T7/T7_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/lambda/lambda_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T4/T4_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/RB69/RB69_btss/, /home/jared/Phages/assembled_data/annotations/2019-08-15/T5/T5_btss/
+    jobid: 0
+    priority: 46
+
+Terminating processes on user request, this might take some time.
+Complete log: /home/jared/phageAnnote/.snakemake/log/2019-08-15T194640.430558.snakemake.log

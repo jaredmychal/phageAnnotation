@@ -1,0 +1,3 @@
+Building DAG of jobs...
+CyclicGraphException in line 242 of /home/jared/phageAnnote/annotation.snake:
+Cyclic dependency on rule interpro_scan.

@@ -1,0 +1,2 @@
+SyntaxError in line 248 of /home/jared/phageAnnote/annotation.snake:
+Command must be given as string after the shell keyword. (annotation.snake, line 248)

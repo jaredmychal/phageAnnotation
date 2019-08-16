@@ -1,0 +1,3 @@
+IndexError in line 246 of /home/jared/phageAnnote/annotation.snake:
+tuple index out of range
+  File "/home/jared/phageAnnote/annotation.snake", line 246, in <module>
