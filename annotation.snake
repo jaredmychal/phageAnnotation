@@ -356,6 +356,5 @@ rule gff_clean:
 
             #merge gff files
             shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_gff/*.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_gff/{input}_prokka.final.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_gff/{input}.master.gff3")
-
         else:
             shell('echo Clean up complete. Annotation has finished!')
