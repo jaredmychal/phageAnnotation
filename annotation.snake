@@ -245,7 +245,7 @@ rule interproscan:
     conda: "envs/interproscan.yaml"
     params: folder="results"
     priority: 30
-    shell: "{INTERPRO_BIN}/interproscan.sh -i {input} --appl phobius,tmhmm,pfam --iprlookup --goterms --pathways -cpu 1 -d {output}"
+    shell: "for file in {FASTAREADS}; do {INTERPRO_BIN}/interproscan.sh -i {input} --appl phobius,tmhmm,pfam,TIGRFAM,ProSitePatterns,ProSiteProfiles --iprlookup --goterms --pathways -cpu 1 -d {output}; done"
 
 #BLAST protein files produce by prokka against NCBI Protein Blast remote database
 #This has not yet completed on my laptop, and is not fully tested.
@@ -301,13 +301,13 @@ rule gff_master:
 
             #add attributes to prokka CDS by parsing each program type into a seperate file then appending to the prokka gff feature column. this ensures each type of program result is appended and not just the first match
             shell("sed -i 's/protein_match/CDS/g' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3")
-            shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'Phobius' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 || true")
-            shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'TMHMM' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3 || true")
+            shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'Phobius.*Region of a membrane-bound protein predicted to be embedded in the membrane.' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 || true")
+            shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'TMHMM.*Region of a membrane-bound protein predicted to be embedded in the membrane.' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3 || true")
             shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'Pfam' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_pfam.edit.gff3 || true")
             shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'ProSiteProfiles' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3 || true")
             shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'ProSitePatterns' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propat.edit.gff3 || true")
             shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'ProDom' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_prodom.edit.gff3 || true")
-            shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9\x22note=Transmembrane domain predicted by Phobius\x3b\x22; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff; fi")
+            shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff; fi")
             shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff; fi")
             shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_pfam.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_pfam.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff; fi")
             shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff; fi")
@@ -347,8 +347,8 @@ rule gff_master:
             #clean up parts of prokka gff file. We don't need the mRNA feature anymore, and clean up inference.
             shell("sed 's,\(inference=ab initio prediction:Prodigal:2.6.*sequence:.*:\)\(.*\)\(;locus_tag=.*product=\)\(.*\)\s\[\(.*\)\],\\1\\2\\3\\4;Note=Similar to \\5 \\4 \\2,g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.2.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff")
             shell("sed -i 's/\t\x3b/\x3b/; s/.*\tmRNA\t.*//g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff")
-            shell("tr -s '\n' < {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.4.gff")
-            shell("sort -k4n -k3r {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.4.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.final.gff")
+            shell("tr -s '\n' < {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.final.gff")
+#            shell("sort -k4n -k3r {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.4.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.final.gff")
 
             #copy files to _gff folder
             shell("cp {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.final.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_gff")
