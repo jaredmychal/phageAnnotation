@@ -40,13 +40,13 @@ TTHP = expand("{annotdir}/{today}/{phage}/{phage}_tthp/{phage}_tthp.tt",today=to
 TRNASCAN = expand("{annotdir}/{today}/{phage}/{phage}_tRNA/{phage}_tRNA.txt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 SIGNALP = expand("{annotdir}/{today}/{phage}/{phage}_signalp/{phage}_signalp.gff3", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 VIRALPRO = expand("{annotdir}/{today}/{phage}/{phage}_viralPRO/{phage}.scores.csv", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
-INTERPROSCAN = expand("{annotdir}/{today}/{phage}/{phage}_interpro/{phage}.faa.gff3",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
+INTERPROSCAN = expand("{annotdir}/{today}/{phage}/{phage}_interpro/",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 BLAST = expand("{annotdir}/{today}/{phage}/{phage}_blastp/{phage}_blast.bsl", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 GFFCLEAN = expand("{annotdir}/{today}/{phage}/{phage}_gff/{phage}.master.gff3",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
 
 #initating rule to call for each additional rule to be run
-rule all:
-    input: expand("{annotdir}/{today}/{phage}/{phage}.faa",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS), GFFCLEAN
+rule annotation:
+    input: GFFCLEAN
 
 
 #Check quality of assembled reads with Quast
@@ -78,7 +78,7 @@ rule prokka:
 
 #run hmmsearch against pVOG group
 
-rule pvog_search:
+rule pvog:
     output: expand("{annotdir}/{today}/{phage}/{phage}_hmmsearch/{phage}_hmm",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     priority: 49
     run:
@@ -143,7 +143,7 @@ rule abricate:
 
 # Promoter prediction with bTSSfinder. We need to search intergenic regions for these. We only want sigma 70 for e.coli phages
 
-rule btss_finder:
+rule btssfinder:
     input: PROKKA
     output: directory(expand("{annotdir}/{today}/{phage}/{phage}_btss/",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS))
     priority: 46
@@ -170,7 +170,7 @@ rule btss_finder:
 
 # Search for rho-dependent terminators with TranstermHP
 
-rule transterm:
+rule transtermhp:
     input: PROKKA
     output: expand("{annotdir}/{today}/{phage}/{phage}_tthp/{phage}_tthp.tt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     priority: 45
@@ -187,7 +187,7 @@ rule transterm:
 
 #Search for tRNA with tRNAscan-SE. Prokka does do this too so this is more incase we want to double check later
 
-rule tRNAscan:
+rule trnascan:
     input: PROKKA
     output: expand("{annotdir}/{today}/{phage}/{phage}_tRNA/{phage}_tRNA.txt",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     priority: 40
@@ -239,18 +239,19 @@ rule signalp:
 
 # run INTERPROSCAN to run pfam, TIGRFAM, Phobius, and TMHMM in one step.
 
-rule interpro_scan:
+rule interproscan:
     input: expand("{annotdir}/{today}/{phage}/{phage}.faa",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
-    output: directory(expand("{annotdir}/{today}/{phage}/{phage}_interpro/{phage}.faa.gff3",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS))
+    output: directory(expand("{annotdir}/{today}/{phage}/{phage}_interpro/",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS))
     conda: "envs/interproscan.yaml"
+    params: folder="results"
     priority: 30
-    shell: "{INTERPRO_BIN}/interproscan.sh -i {input} --appl tmhmm,phobius,pfam,ProSiteProfiles,ProSitePatterns,ProDom --iprlookup --goterms --pathways -cpu 1 -d {output}"
+    shell: "{INTERPRO_BIN}/interproscan.sh -i {input} --appl phobius,tmhmm,pfam --iprlookup --goterms --pathways -cpu 1 -d {output}"
 
 #BLAST protein files produce by prokka against NCBI Protein Blast remote database
 #This has not yet completed on my laptop, and is not fully tested.
 #currently set to blastp the locally curated phage protein database
 
-rule blastreads:
+rule blastp:
     input: PROKKA
     output: expand("{annotdir}/{today}/{phage}/{phage}_blastp/{phage}_blast.bsl", today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     priority: 30
@@ -269,7 +270,7 @@ rule blastreads:
 #clean up all of the resulting output files from each tool, then merge them into one gff3 file which we view in genious
 #this rule also calls all other output files desired
 
-rule gff_clean:
+rule gff_master:
     input: PROKKA, PVOG, ABRICATE, BTSSFIND, TTHP, TRNASCAN, SIGNALP, INTERPROSCAN
     output: expand("{annotdir}/{today}/{phage}/{phage}_gff/{phage}.master.gff3",today=todaystr, annotdir=ANNOTDIR, phage=FASTAREADS)
     priority: 29
@@ -306,7 +307,7 @@ rule gff_clean:
             shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'ProSiteProfiles' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3 || true")
             shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'ProSitePatterns' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propat.edit.gff3 || true")
             shell("cat {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_interpro.final.gff3 | grep 'ProDom' > {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_prodom.edit.gff3 || true")
-            shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff; fi")
+            shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9\x22note=Transmembrane domain predicted by Phobius\x3b\x22; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_phobius.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.codon.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff; fi")
             shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_tmhmm.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.phobius.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff; fi")
             shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_pfam.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_pfam.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.tmhmm.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff; fi")
             shell("if [[ -s {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3 ]]; then awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$9; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' {ANNOTDIR}/{todaystr}/{input}/{input}_interpro/{input}_propro.edit.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff >  {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff; else cp {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.pfam.edit.gff {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.propro.edit.gff; fi")
@@ -344,9 +345,10 @@ rule gff_clean:
             shell("sed -i 's/\tname=/;Ontology_term=/g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.2.gff")
 
             #clean up parts of prokka gff file. We don't need the mRNA feature anymore, and clean up inference.
-            shell("sed 's,\(inference=ab initio prediction:Prodigal:2.6.*sequence:RefSeq:\)\(.*\)\(;locus_tag=.*product=\)\(.*\)\s\[\(.*\)\],\\1\\2\\3\\4;Note=Similar to \\5 \\4 \\2,g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.2.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff")
+            shell("sed 's,\(inference=ab initio prediction:Prodigal:2.6.*sequence:.*:\)\(.*\)\(;locus_tag=.*product=\)\(.*\)\s\[\(.*\)\],\\1\\2\\3\\4;Note=Similar to \\5 \\4 \\2,g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.2.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff")
             shell("sed -i 's/\t\x3b/\x3b/; s/.*\tmRNA\t.*//g' {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff")
-            shell("tr -s '\n' < {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.final.gff")
+            shell("tr -s '\n' < {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.3.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.4.gff")
+            shell("sort -k4n -k3r {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.edit.4.gff > {ANNOTDIR}/{todaystr}/{input}/{input}_prokka.final.gff")
 
             #copy files to _gff folder
             shell("cp {ANNOTDIR}/{todaystr}/{input}/{input}_tthp/{input}_tthp.final.gff3 {ANNOTDIR}/{todaystr}/{input}/{input}_gff")
