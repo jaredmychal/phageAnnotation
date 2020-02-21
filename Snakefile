@@ -40,6 +40,9 @@ rule prokka:
     shell:
         """
         echo Annotating...
+        mkdir -p results
+        mkdir -p results/edits
+        mkdir -p results/gff
         prokka --kingdom Viruses --gcode 11 --prefix {params.sample_name} --locustag {params.sample_name} --addmrna --addgenes --rfam --rnammer --cdsrnaolap --outdir results {input} --force
         """
 
