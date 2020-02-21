@@ -223,19 +223,20 @@ rule gff_format:
         cp results/{params.sample_name}.gff results/edits/{params.sample_name}_prokka.edit.gff
         sed -i 's/inference.*//g' results/edits/{params.sample_name}_prokka.edit.gff
 
-        echo Adding BLASTP results
-        cp results/blast/{params.sample_name}_blastp.txt results/edits/{params.sample_name}_blastp.txt
-        tr -d '\n' < results/edits/{params.sample_name}_blastp.txt > results/edits/{params.sample_name}_blastp.2.txt
-        sed 's/Query=/\\nQuery=/g' results/edits/{params.sample_name}_blastp.2.txt > results/edits/{params.sample_name}_blastp.txt
-        rm results/edits/{params.sample_name}_blastp.2.txt
-        sed -i 's/Query= \({params.sample_name}_[[:digit:]]\+\)/\\1\tBLASTP\tCDS\tStart\tEnd\t;ID=\\1;locus_tag=\\1;note=Similar to /g' results/edits/{params.sample_name}_blastp.txt
-        sed -i 's/Similar to >YP/Similar to YP/; s/Similar to >NP/Similar to NP/g' results/edits/{params.sample_name}_blastp.txt
-        sed -i 's/\]>\(YP.*\)/\] and less similar to \\1;/; s/\]>\(NP.*\)/\] and less similar to \\1;/g' results/edits/{params.sample_name}_blastp.txt
-        sed -i 's/[[:alpha:]]>\(YP.*\)/\] and less similar to \\1;/; s/[[:alpha:]]>\(NP.*\)/\] and less similar to \\1;/g' results/edits/{params.sample_name}_blastp.txt
-        sed -i 's/\(note=Similar to [[:alpha:]]P_[[:digit:]]\+\.[[:digit:]] \)\(.*\)\( \[.*\)\( and less\)/product=\\2;\\1\\2\\3\\4/g' results/edits/{params.sample_name}_blastp.txt
-        sed -i 's/product=.*hypothetical protein.*;note/product=hypothetical protein;note/; s/product=protein of unknown function/product=hypothetical protein/; s/product=unnamed protein product/product=hypothetical protein/; s/putative//g' results/edits/{params.sample_name}_blastp.txt
-        awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$1]=$4;b[$1]=$5; next}}{{$4=a[$1]; $5=b[$1]; print}}' results/edits/{params.sample_name}.tlf results/edits/{params.sample_name}_blastp.txt > results/edits/{params.sample_name}_blastp.gff
-        awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$6; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' results/edits/{params.sample_name}_blastp.gff results/edits/{params.sample_name}_prokka.edit.gff > results/edits/{params.sample_name}_prokka.blastp.gff
+#        echo Adding BLASTP results
+#        cp results/blast/{params.sample_name}_blastp.txt results/edits/{params.sample_name}_blastp.txt
+#        tr -d '\n' < results/edits/{params.sample_name}_blastp.txt > results/edits/{params.sample_name}_blastp.2.txt
+#        sed 's/Query=/\\nQuery=/g' results/edits/{params.sample_name}_blastp.2.txt > results/edits/{params.sample_name}_blastp.txt
+#        rm results/edits/{params.sample_name}_blastp.2.txt
+#        sed -i 's/Query= \({params.sample_name}_[[:digit:]]\+\)/\\1\tBLASTP\tCDS\tStart\tEnd\t;ID=\\1;locus_tag=\\1;note=Similar to /g' results/edits/{params.sample_name}_blastp.txt
+#        sed -i 's/Similar to >YP/Similar to YP/; s/Similar to >NP/Similar to NP/g' results/edits/{params.sample_name}_blastp.txt
+#        sed -i 's/\]>\(YP.*\)/\] and less similar to \\1;/; s/\]>\(NP.*\)/\] and less similar to \\1;/g' results/edits/{params.sample_name}_blastp.txt
+#        sed -i 's/[[:alpha:]]>\(YP.*\)/\] and less similar to \\1;/; s/[[:alpha:]]>\(NP.*\)/\] and less similar to \\1;/g' results/edits/{params.sample_name}_blastp.txt
+#        sed -i 's/\(note=Similar to [[:alpha:]]P_[[:digit:]]\+\.[[:digit:]] \)\(.*\)\( \[.*\)\( and less\)/product=\\2;\\1\\2\\3\\4/g' results/edits/{params.sample_name}_blastp.txt
+#        sed -i 's/product=.*hypothetical protein.*;note/product=hypothetical protein;note/; s/product=protein of unknown function/product=hypothetical protein/; s/product=unnamed protein product/product=hypothetical protein/; s/putative//g' results/edits/{params.sample_name}_blastp.txt
+#        awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$1]=$4;b[$1]=$5; next}}{{$4=a[$1]; $5=b[$1]; print}}' results/edits/{params.sample_name}.tlf results/edits/{params.sample_name}_blastp.txt > results/edits/{params.sample_name}_blastp.gff
+#        awk -v FS='\t' -v OFS='\t' 'NR==FNR{{a[$3$4]=$6; next}}{{$3$4 in a; $9 = $9a[$3$4]; print}}' results/edits/{params.sample_name}_blastp.gff results/edits/{params.sample_name}_prokka.edit.gff > results/edits/{params.sample_name}_prokka.blastp.gff
+        cp results/edits/{params.sample_name}_prokka.edit.gff results/edits/{params.sample_name}_prokka.blastp.gff
 
         echo Collecting InterProScan5 Data...
 
