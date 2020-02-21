@@ -1,0 +1,14 @@
+# Path to input directory
+fast_files: 'raw_files'
+# Path to conda install
+conda_env: '/home/js/miniconda3/envs/phages/'
+# Path to interproscan folder
+interproscan: '/home/js/my_interproscan/interproscan-5.38-76.0'
+# Path to btssfinder folder
+btssfinder: '/home/js/BTSSFINDER'
+# Trusted genome assembly and annotation to use as reference
+ref_genome: '/home/js/proAnnote/reference_genomes/proteins.faa'
+#path to gffread
+gffread: '/home/js/gff_tools/gffread/gffread'
+#hmmdb: '/home/jared/miniconda3/envs/PhagePipe/db/hmm/vog.hmm'
+hmmdb: '/home/js/miniconda3/envs/phages/db/hmm/VOG.hmm'
