@@ -1,0 +1,5 @@
+echo Collecting Promoter Data...
+awk '$1=$1' FS=' ' OFS='\t' results/{params.sample_name}_prom.txt > results/edits/{params.sample_name}_prom.edit.txt
+sed -i 's,\([[:alpha:]]\+\t\)\([[:alpha:]]\+\t\)\(.*\),\\1\\3\t\\2,g' results/edits/{params.sample_name}_prom.edit.txt
+sed -i 's/positivo/\x2e\t+\t\x2e/; s/negativo/\x2e\t-\t\x2e/; s/P[[:digit:]]\+plus/G4PromFinder\tPromoter/; s/P[[:digit:]]\+minus/G4PromFinder\tPromoter/; s/^/{params.sample_name}\t/; s/$/note=Promoter predicted by G4PromFinder;/g' results/edits/{params.sample_name}_prom.edit.txt
+sed '1d' results/edits/{params.sample_name}_prom.edit.txt > results/edits/{params.sample_name}_prom.final.gff3

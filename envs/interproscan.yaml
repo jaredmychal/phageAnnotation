@@ -3,4 +3,4 @@ channels:
  - bioconda
  - conda-forge
 dependencies:
- - openjdk=8.0.192
+ - openjdk=11.0.1

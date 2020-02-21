@@ -1,0 +1,9 @@
+name: prokka
+channels:
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - prokka
+  - abricate
+  - ncbi-amrfinderplus

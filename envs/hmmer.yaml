@@ -1,0 +1,9 @@
+name: align
+channels:
+  - conda-forge
+  - biocore 
+  - bioconda
+  - defaults
+  - r
+dependencies:
+  - hmmer

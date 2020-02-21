@@ -1,0 +1,3 @@
+
+
+i=0;for i in {1..271}; do echo "vB_EcoS_XPPD_$i" >> /home/js/Downloads/XPPD_Results/final.txt && grep -A 200 -w "vB_EcoS_XPPD_$i" /home/js/Downloads/XPPD-Alignment.txt | grep -m 2 -A 1 ">.*$" >> /home/js/Downloads/XPPD_Results/final.txt; done

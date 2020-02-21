@@ -1,0 +1,14 @@
+name: regulatory
+channels:
+  - anaconda
+  - conda-forge
+  - bioconda
+  - defaults
+dependencies:
+  - transtermhp
+  - biopython
+  - perl-bioperl
+  - libgcc
+  - numpy
+  - matplotlib
+  - openpyxl
