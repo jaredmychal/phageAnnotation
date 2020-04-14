@@ -1,14 +1,14 @@
-# Path to input directory
+# Path to input directory of fasta files to be annotated. Currently within the pipeline directory but can be changed
 fast_files: 'raw_files'
-# Path to conda install
-conda_env: '/home/js/miniconda3/envs/phages/'
-# Path to interproscan folder
-interproscan: '/home/js/my_interproscan/interproscan-5.38-76.0'
-# Path to btssfinder folder
-btssfinder: '/home/js/BTSSFINDER'
-#path to gffread
-gffread: '/home/js/gff_tools/gffread/gffread'
-#hmmdb: '/home/jared/miniconda3/envs/PhagePipe/db/hmm/vog.hmm'
-hmmdb: '/home/js/miniconda3/envs/phages/db/hmm/VOG.hmm'
+# Path to conda install. This is needed for TransTermHP to locate the .dat file required for terminator prediction
+conda_env: '/home/user/miniconda3/envs/phages/'
+# Path to interproscan folder. Must be installed by user from https://github.com/ebi-pf-team/interproscan/wiki
+interproscan: '/home/user/my_interproscan/interproscan-5.38-76.0'
+# Path to btssfinder folder. Must be installed by user from https://www.cbrc.kaust.edu.sa/btssfinder/
+btssfinder: '/home/user/BTSSFINDER'
+#path to gffread (https://github.com/gpertea/gffread)
+gffread: 'scripts/gffread/gffread'
+#Path to pVOG hmm file (http://dmk-brain.ecn.uiowa.edu/pVOGs/downloads.html)
+hmmdb: '/home/user/miniconda3/envs/phages/db/hmm/VOG.hmm'
 #path to refseq_proteins for Viruses. These need to be downloaded from NCBI
-virus_refseq_protein: '/home/js/phageAnnote/viral_proteins/refseq_viral_proteins'
+virus_refseq_protein: '/home/user/phageAnnote/viral_proteins/refseq_viral_proteins'
