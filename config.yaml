@@ -10,5 +10,5 @@ btssfinder: '/home/js/BTSSFINDER'
 gffread: '/home/js/gff_tools/gffread/gffread'
 #hmmdb: '/home/jared/miniconda3/envs/PhagePipe/db/hmm/vog.hmm'
 hmmdb: '/home/js/miniconda3/envs/phages/db/hmm/VOG.hmm'
-#path to refseq_proteins for Viruses
+#path to refseq_proteins for Viruses. These need to be downloaded from NCBI
 virus_refseq_protein: '/home/js/phageAnnote/viral_proteins/refseq_viral_proteins'
